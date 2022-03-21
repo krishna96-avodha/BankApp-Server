@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken")
 
 // import express
 const express = require('express');
@@ -13,6 +14,38 @@ const dataservice = require('./service/data.service')
 
 // parse
 app.use(express.json())
+
+
+// ************************************************************************
+
+// application specific middleware
+// const appMiddleware = (req,res,next)=>{
+//     console.log("Application specific middleware");
+//     next()
+// }
+
+// app.use(appMiddleware)
+
+// to varify miidle ware
+const jwtMiddleware = (req,res,next)=>{
+    try{
+        const token =req.headers["x-access-token"]
+        // varifytoken
+        const data = jwt.verify(token,'supersecretkey123')
+        req.currentAcno = data.currentAcno
+        next()
+    }
+    catch{
+        res.status(422).json({
+            statusbar:422,
+            status:false,
+            message:"please Log in"
+        })
+
+    }
+}
+
+// **************************************************************************
 
 
 // resolve http req from client
@@ -73,17 +106,26 @@ app.post('/login', (req, res) => {
 
 // 2) deposit api
 
-app.post('/deposit', (req, res) => {
+app.post('/deposit',jwtMiddleware, (req, res) => {
     const result = dataservice.deposit(req.body.acno, req.body.password,req.body.amt)
    res.status(result.statusCode).json(result)
 })
 
 
 
-// 2) withdraw api
+// 3) withdraw api
 
 app.post('/withdraw', (req, res) => {
     const result = dataservice.withdraw(req.body.acno, req.body.password,req.body.amt)
+   res.status(result.statusCode).json(result)
+})
+
+
+// 4) transaction api
+
+
+app.post('/getTransaction', (req, res) => {
+    const result = dataservice.getTransaction(req.body.acno)
    res.status(result.statusCode).json(result)
 })
 
